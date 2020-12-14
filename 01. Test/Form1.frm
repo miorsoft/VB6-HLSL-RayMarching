@@ -1,13 +1,14 @@
 VERSION 5.00
 Begin VB.Form Form1 
    Caption         =   "Form1"
-   ClientHeight    =   9315
+   ClientHeight    =   9570
    ClientLeft      =   105
    ClientTop       =   450
-   ClientWidth     =   10245
+   ClientWidth     =   10215
    LinkTopic       =   "Form1"
-   ScaleHeight     =   9315
-   ScaleWidth      =   10245
+   ScaleHeight     =   638
+   ScaleMode       =   3  'Pixel
+   ScaleWidth      =   681
    StartUpPosition =   1  'CenterOwner
 End
 Attribute VB_Name = "Form1"

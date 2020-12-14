@@ -2,7 +2,7 @@
 
 
 #define MAX_STEPS 100
-#define MAX_DIST 100.
+#define MAX_DIST 1000.
 #define EPS .01
 
 static float ttt;
@@ -17,6 +17,16 @@ float sdSphere( float3 p, float s )
 {
   return length(p)-s;
 }
+float sdBox( float3 p, float3 b )
+{
+  float3 q = abs(p) - b;
+  return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
+}
+float sdTorus( float3 p, float2 t )
+{
+  float2 q = float2(length(float2(p.x,p.z))-t.x,p.y);
+  return length(q)-t.y;
+}
 
 /////////////////////////////////////////
 
@@ -24,7 +34,14 @@ float sdSphere( float3 p, float s )
 float SCENE(float3 p){
 	float SphereDist = sdSphere(p - float3(0.0, 1.0, 5.0) , 1. ) ;
 	float PlaneDist = p.y ;
+	float BoxDist = sdBox(p -  float3(3.0, .2+.08, 5.0) , float3( .5 ,.2,.5)) - .08;
+	float TorusDist = sdTorus(p.xzy -  float3(-3.0, 5., 1.2) , float2( 1.,.2)) ;
+	
 	float d = min(SphereDist,PlaneDist);
+	
+	d = min(d,BoxDist);
+	d = min(d,TorusDist);
+	
 	return d;
 }
 
@@ -71,9 +88,9 @@ float3  CalcSceneNormal(float3 p) {
 /////////////////////////////////////////// BASIC LIGHTING
 float3 lighting(float3 p) {
 
-	float3 LightPos = float3(0. ,5. ,6. ); 
-	LightPos.x= LightPos.x - 5*cos(ttt);
-	LightPos.z= LightPos.z - 5;
+	float3 LightPos = float3(0.-3 ,1+3. ,5.-3. ); 
+//	LightPos.x= LightPos.x - 4*cos(ttt);
+//	LightPos.z= LightPos.z - 4*sin(ttt);
 	
 	float3 L = normalize(LightPos-p);
 	float3 n =  CalcSceneNormal(p);
