@@ -11,9 +11,6 @@ uniform float TIME1 = 0.0; // Variabliles passed from VB6
 uniform float TIME2 = 0.0;
 uniform float TIME3 = 0.0;
 
-//Texture2D    mytexture : register(t0);
-//SamplerState mysampler : register(s0);
-
 /////////////////////////////////////
 //// RAYMARCHING
 /////////////////////////////////////
@@ -82,7 +79,7 @@ float3  CalcSceneNormal(float3 p) {
 
 
 /////////////////////////////////////////// BASIC LIGHTING
-//  float3 lighting(float3 p,float2 time) {
+
 float3 lighting(float3 p) {
 
 float AAA = TIME1 + TIME2 *10.0 + TIME3*300.0;
@@ -136,25 +133,21 @@ VS_Output vs_main(VS_Input input)
 
 float4 ps_main(VS_Output input) : COLOR0
 {
- //    return mytexture.Sample(mysampler, input.uv);   
 	
    float4 col4=float4(0.0,0.0,0.0,1.0);
    float2	UV = input.uv;
-		//	UV=UV*2-1;
+    //	UV=UV*2-1;
 	//		UV.y=-UV.y;
-			
-			
+		
 	///////////////// Minimal Camera
 	float3 ro = float3(0.0, 1.2, 0.0);
 	float3 rd = normalize(float3 ( UV.x, UV.y, 1.0) );
 	float d = RayMarch(ro , rd ) ;
-//	float d=SCENE(rd*199.9); /// QUESTO VA
-//d=d*.1; return float4(d,d,d ,1.0);
 	
 	float3 p = ro + rd * d ;
-//
+
     float3 col3 = lighting (p);
-//			
+	
 	col4 = float4(col3.x,col3.y,col3.z,1.0);	
 //   // col4.x=input.uv.x;
 //   // col4.y=input.uv.y;
