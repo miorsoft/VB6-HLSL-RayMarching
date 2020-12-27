@@ -1,16 +1,16 @@
 /// RAYMARCHING reference:    https://youtu.be/PGtv-dBi2wE
 
-
 #define MAX_STEPS 400
 #define MAX_DIST 1000.
 #define EPS .01
 
-static float ttt;
+
+//Texture2D    mytexture : register(t0);
+//SamplerState mysampler : register(s0);
 
 /////////////////////////////////////
 //// RAYMARCHING
 /////////////////////////////////////
-
 
 ///////////////////////////////////////// SDF FUNCTIONS
 float sdSphere( float3 p, float s )
@@ -28,6 +28,7 @@ float sdTorus( float3 p, float2 t )
   return length(q)-t.y;
 }
 /////////////////////////////////////////
+
 
 
 ////////////////////////////////////////// Get DISTANCE of a point 
@@ -56,7 +57,7 @@ float RayMarch (float3 ro, float3 rd )
 		float3 p = ro + rd * d0;
 		float DS =  SCENE(p);
 		d0 += DS;
-		if (d0 > MAX_DIST || DS < EPS) break ;
+		if (d0 > MAX_DIST || DS < EPS)  i=MAX_STEPS  ;
 	}
 	return d0;
 }
@@ -128,8 +129,7 @@ struct VS_Output {
 //	float2 RES : RESOLUTION;
 };
 
-Texture2D    mytexture : register(t0);
-SamplerState mysampler : register(s0);
+
 
 VS_Output vs_main(VS_Input input)
 {
@@ -171,21 +171,13 @@ float4 ps_main(VS_Output input) : SV_Target
 			
 	col4 = float4(col3,1.0);	
 	
-	ttt += 1000;
 	
     return col4;
 }
-
-
-
 
 
 /////////////////////////////////////
 //// intrinsic FUNCTIONS
 /////////////////////////////////////
 // https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-intrinsic-functions
-
-
-
-
 

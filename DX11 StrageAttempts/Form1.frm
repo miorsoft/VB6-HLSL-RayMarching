@@ -57,6 +57,8 @@ Private m_stride                As Long
 Private m_offset                As Long
 Private m_samplerState          As ID3D11SamplerState
 Private m_textureView           As ID3D11ShaderResourceView
+Private m_textureView2           As ID3D11ShaderResourceView
+
 Private m_isRunning             As Boolean
 Private m_windowDidResize       As Boolean
 
@@ -66,12 +68,23 @@ Private Type UcsBuffer
     Data()              As Byte
 End Type
 
-Private Sub Form_Load()
-    Dim hResult         As VBHRESULT
+
+    '--- Load Image
+    Private texWidth  As Long
+    Private texHeight As Long
+    Private texNumChannels As Long
+    Private testTextureBytes() As Byte
+    Private testTextureBytes2() As Byte
     
+    Private texBytesPerRow As Long
+
+
+Private Sub Form_Load()
+    Dim hResult   As VBHRESULT
+
     '--- Create D3D11 Device and Context
     Dim featureLevels() As Long
-    Dim creationFlags   As Long
+    Dim creationFlags As Long
     pvArrayLong featureLevels, D3D_FEATURE_LEVEL_11_0
     creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT
     #If DebugBuild Then
@@ -88,26 +101,26 @@ RetryCreateDevice:
     If hResult < 0 Then
         Err.Raise hResult, "D3D11CreateDevice"
     End If
-    
-#If DebugBuild And False Then
-    '--- Set up debug layer to break on D3D11 errors
-    Dim d3dDebug        As ID3D11Debug
-    Dim d3dInfoQueue    As ID3D11InfoQueue
-    Set d3dDebug = m_d3d11Device
-    If Not d3dDebug Is Nothing Then
-        Set d3dInfoQueue = d3dDebug
-        d3dInfoQueue.SetBreakOnSeverity D3D11_MESSAGE_SEVERITY_CORRUPTION, 1
-        d3dInfoQueue.SetBreakOnSeverity D3D11_MESSAGE_SEVERITY_ERROR, 1
-        Set d3dInfoQueue = Nothing
-    End If
-    Set d3dDebug = Nothing
-#End If
-    
+
+    #If DebugBuild And False Then
+        '--- Set up debug layer to break on D3D11 errors
+        Dim d3dDebug As ID3D11Debug
+        Dim d3dInfoQueue As ID3D11InfoQueue
+        Set d3dDebug = m_d3d11Device
+        If Not d3dDebug Is Nothing Then
+            Set d3dInfoQueue = d3dDebug
+            d3dInfoQueue.SetBreakOnSeverity D3D11_MESSAGE_SEVERITY_CORRUPTION, 1
+            d3dInfoQueue.SetBreakOnSeverity D3D11_MESSAGE_SEVERITY_ERROR, 1
+            Set d3dInfoQueue = Nothing
+        End If
+        Set d3dDebug = Nothing
+    #End If
+
     '--- Create Swap Chain
-    Dim dxgiFactory     As IDXGIFactory2
-    Dim dxgiDevice      As IDXGIDevice1
-    Dim dxgiAdapter     As IDXGIAdapter
-    Dim adapterDesc     As DXGI_ADAPTER_DESC
+    Dim dxgiFactory As IDXGIFactory2
+    Dim dxgiDevice As IDXGIDevice1
+    Dim dxgiAdapter As IDXGIAdapter
+    Dim adapterDesc As DXGI_ADAPTER_DESC
     Dim d3d11SwapChainDesc As DXGI_SWAP_CHAIN_DESC1
     Set dxgiDevice = m_d3d11Device
     Set dxgiAdapter = dxgiDevice.GetAdapter()
@@ -116,8 +129,8 @@ RetryCreateDevice:
     Debug.Print "Graphics Device: " & Replace(adapterDesc.Description, vbNullChar, vbNullString)
     Set dxgiFactory = dxgiAdapter.GetParent(IIDFromString(szIID_IDXGIFactory2))
     With d3d11SwapChainDesc
-        .Width = 0 '--- use window width
-        .Height = 0 '--- use window height
+        .Width = 0    '--- use window width
+        .Height = 0    '--- use window height
         .Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
         .SampleDesc.Count = 1
         .SampleDesc.Quality = 0
@@ -129,16 +142,16 @@ RetryCreateDevice:
         .Flags = 0
     End With
     Set m_d3d11SwapChain = dxgiFactory.CreateSwapChainForHwnd(m_d3d11Device, hWnd, d3d11SwapChainDesc, ByVal 0, Nothing)
-    
+
     '--- Create Framebuffer Render Target
     Dim d3d11FrameBuffer As ID3D11Texture2D
     Set d3d11FrameBuffer = m_d3d11SwapChain.GetBuffer(0, IIDFromString(szIID_ID3D11Texture2D))
     Set m_d3d11FrameBufferView = m_d3d11Device.CreateRenderTargetView(d3d11FrameBuffer, ByVal 0)
     Set d3d11FrameBuffer = Nothing
-    
+
     '--- Create Vertex Shader
     Dim shaderCompileErrorsBlob As ID3DBlob
-    Dim errorString     As String
+    Dim errorString As String
     hResult = D3DCompileFromFile(PathCombine(App.Path, "shaders.hlsl"), ByVal 0, ByVal 0, "vs_main", "vs_5_0", 0, 0, m_vsBlob, shaderCompileErrorsBlob)
     If hResult < 0 Then
         If hResult = LNG_FACILITY_WIN32 Or ERROR_FILE_NOT_FOUND Then
@@ -151,9 +164,9 @@ RetryCreateDevice:
         GoTo QH
     End If
     Set m_vertexShader = m_d3d11Device.CreateVertexShader(m_vsBlob.GetBufferPointer(), m_vsBlob.GetBufferSize(), Nothing)
-    
+
     '--- Create Pixel Shader
-    Dim psBlob As ID3DBlob
+    Dim psBlob    As ID3DBlob
     hResult = D3DCompileFromFile(PathCombine(App.Path, "shaders.hlsl"), ByVal 0, ByVal 0, "ps_main", "ps_5_0", 0, 0, psBlob, shaderCompileErrorsBlob)
     If hResult < 0 Then
         If hResult = LNG_FACILITY_WIN32 Or ERROR_FILE_NOT_FOUND Then
@@ -167,38 +180,46 @@ RetryCreateDevice:
     End If
     Set m_pixelShader = m_d3d11Device.CreatePixelShader(psBlob.GetBufferPointer(), psBlob.GetBufferSize(), Nothing)
     Set psBlob = Nothing
-    
+
     '--- Create Input Layout
-    Dim inputElementDesc(0 To 1)  As D3D11_INPUT_ELEMENT_DESC
+    Dim inputElementDesc(0 To 1) As D3D11_INPUT_ELEMENT_DESC
     Dim nameBuffer(0 To 1) As UcsBuffer
     pvInitInputElementDesc inputElementDesc(0), nameBuffer(0), "POS", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0
     pvInitInputElementDesc inputElementDesc(1), nameBuffer(1), "TEX", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
-     
-     
+
+
     'Messo io
-'    pvInitInputElementDesc inputElementDesc(2), nameBuffer(2), "TEXCOORD1", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
-        
+    '    pvInitInputElementDesc inputElementDesc(2), nameBuffer(2), "TEXCOORD1", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0
+
     Set m_inputLayout = m_d3d11Device.CreateInputLayout(inputElementDesc(0), UBound(inputElementDesc) + 1, m_vsBlob.GetBufferPointer(), m_vsBlob.GetBufferSize())
-    
+
     '--- Create Vertex Buffer
-    Dim vertexData() As Single '--- x, y, u, v
-'    pvArraySingle vertexData, _
-        -0.5!, 0.5!, 0!, 0!, _
-        0.5!, -0.5!, 1!, 1!, _
-        -0.5!, -0.5!, 0!, 1!, _
-        -0.5!, 0.5!, 0!, 0!, _
-        0.5!, 0.5!, 1!, 0!, _
-        0.5!, -0.5!, 1!, 1!
-        
-' For RayMarching
-    pvArraySingle vertexData, _
-        -1!, 1!, -1!, 1!, _
-        1!, -1!, 1!, -1!, _
-        -1!, -1!, -1!, -1!, _
-        -1!, 1!, -1!, 1!, _
-        1!, 1!, 1!, 1!, _
-        1!, -1!, 1!, -1!
-        
+    Dim vertexData() As Single    '--- x, y, u, v
+'        pvArraySingle vertexData, _
+         -0.5!, 0.5!, 0!, 0!, _
+         0.5!, -0.5!, 1!, 1!, _
+         -0.5!, -0.5!, 0!, 1!, _
+         -0.5!, 0.5!, 0!, 0!, _
+         0.5!, 0.5!, 1!, 0!, _
+         0.5!, -0.5!, 1!, 1!
+
+    ' For RayMarching
+   ' pvArraySingle vertexData, _
+                  -1!, 1!, -1!, 1!, _
+                  1!, -1!, 1!, -1!, _
+                  -1!, -1!, -1!, -1!, _
+                  -1!, 1!, -1!, 1!, _
+                  1!, 1!, 1!, 1!, _
+                  1!, -1!, 1!, -1!
+    ' Full screen
+      pvArraySingle vertexData, _
+         -1!, 1!, 0!, 0!, _
+         1!, -1!, 1!, 1!, _
+         -1!, -1!, 0!, 1!, _
+         -1!, 1!, 0!, 0!, _
+         1!, 1!, 1!, 0!, _
+         1!, -1, 1!, 1!
+
     m_stride = 4 * 4
     m_numVerts = (UBound(vertexData) + 1) / 4
     m_offset = 0
@@ -211,7 +232,7 @@ RetryCreateDevice:
     Dim vertexSubresourceData As D3D11_SUBRESOURCE_DATA
     vertexSubresourceData.pSysMem = VarPtr(vertexData(0))
     Set m_vertexBuffer = m_d3d11Device.CreateBuffer(vertexBufferDesc, vertexSubresourceData)
-    
+
     '--- Create Sampler State
     Dim samplerDesc As D3D11_SAMPLER_DESC
     With samplerDesc
@@ -226,24 +247,54 @@ RetryCreateDevice:
         .ComparisonFunc = D3D11_COMPARISON_NEVER
     End With
     Set m_samplerState = m_d3d11Device.CreateSamplerState(samplerDesc)
-    
-    '--- Load Image
-    Dim texWidth         As Long
-    Dim texHeight        As Long
-    Dim texNumChannels   As Long
-    Dim testTextureBytes() As Byte
-    Dim texBytesPerRow   As Long
-    If Not pvLoadPng(PathCombine(App.Path, "testTexture.png"), texWidth, texHeight, texNumChannels, testTextureBytes) Then
-        MsgBox "Error loading testTexture.png", vbExclamation, "Load Image"
-        Unload Me
-        GoTo QH
-    End If
+
+    '    '--- Load Image
+    '    Dim texWidth  As Long
+    '    Dim texHeight As Long
+    '    Dim texNumChannels As Long
+    '    Dim testTextureBytes() As Byte
+    '    Dim texBytesPerRow As Long
+
+    '
+    '    If Not pvLoadPng(PathCombine(App.Path, "testTexture.png"), texWidth, texHeight, texNumChannels, testTextureBytes) Then
+    '        MsgBox "Error loading testTexture.png", vbExclamation, "Load Image"
+    '        Unload Me
+    '        GoTo QH
+    '    End If
+    '    texBytesPerRow = texWidth * texNumChannels
+        
+    ' MAKE a Custom input image for TEXTURE
+    Dim X         As Long
+    Dim Y         As Long
+    Dim Dx        As Single
+    Dim Dy        As Single
+    Dim D         As Single
+
+    texWidth = 200
+    texHeight = 100
+    texNumChannels = 4
     texBytesPerRow = texWidth * texNumChannels
-    
-    '--- Create Texture
-    Dim textureDesc     As D3D11_TEXTURE2D_DESC
+    ReDim testTextureBytes(texBytesPerRow * texHeight - 1)
+    For X = 0 To texWidth - 1
+        For Y = 0 To texHeight - 1
+            Dx = (X - texWidth * 0.5) * 1 / texWidth
+            Dy = (Y - texHeight * 0.5) * 1 / texHeight
+            D = Sqr(Dx * Dx + Dy * Dy) * 255 * 1.4
+            testTextureBytes(IDX(X, Y)) = D
+            testTextureBytes(IDX(X, Y) + 1) = D
+            testTextureBytes(IDX(X, Y) + 2) = 255 - D
+            testTextureBytes(IDX(X, Y) + 3) = 255
+        Next
+    Next
+
+
+    '--- Create Texture-------------------------
+    Dim textureDesc As D3D11_TEXTURE2D_DESC
     Dim textureSubresourceData As D3D11_SUBRESOURCE_DATA
-    Dim texture         As ID3D11Texture2D
+    Dim texture   As ID3D11Texture2D
+
+    Dim textureSubresourceData2 As D3D11_SUBRESOURCE_DATA
+
     With textureDesc
         .Width = texWidth
         .Height = texHeight
@@ -254,13 +305,55 @@ RetryCreateDevice:
         .Usage = D3D11_USAGE_IMMUTABLE
         .BindFlags = D3D11_BIND_SHADER_RESOURCE
     End With
+
     With textureSubresourceData
         .pSysMem = VarPtr(testTextureBytes(0))
         .SysMemPitch = texBytesPerRow
     End With
+    
     Set texture = m_d3d11Device.CreateTexture2D(textureDesc, textureSubresourceData)
     Set m_textureView = m_d3d11Device.CreateShaderResourceView(texture, ByVal 0)
+'-----------------------------------------------
+
+Stop
+
+    Dim texture2   As ID3D11Texture2D
+    texWidth = 1
+    texHeight = 1
+    texNumChannels = 4
+    texBytesPerRow = texWidth * texNumChannels
+    ReDim testTextureBytes2(texBytesPerRow * texHeight - 1)
+    D = 0
+    For X = 0 To texWidth - 1
+        For Y = 0 To texHeight - 1
+            testTextureBytes2(IDX(X, Y)) = D
+            testTextureBytes2(IDX(X, Y) + 1) = D
+            testTextureBytes2(IDX(X, Y) + 2) = 255 - D
+            testTextureBytes2(IDX(X, Y) + 3) = D
+        Next
+    Next
     
+    With textureDesc
+        .Width = texWidth
+        .Height = texHeight
+        .MipLevels = 1
+        .ArraySize = 1
+        .Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
+        .SampleDesc.Count = 1
+        .Usage = D3D11_USAGE_IMMUTABLE
+        .BindFlags = D3D11_BIND_SHADER_RESOURCE
+    End With
+      With textureSubresourceData2
+        .pSysMem = VarPtr(testTextureBytes2(0))
+        .SysMemPitch = texBytesPerRow
+    End With
+    
+    Set texture2 = m_d3d11Device.CreateTexture2D(textureDesc, textureSubresourceData2)
+    Set m_textureView2 = m_d3d11Device.CreateShaderResourceView(texture2, ByVal 0)
+
+'--------------------------------------------------------------
+
+
     '--- Main Loop
     Show
     m_isRunning = True
@@ -274,11 +367,11 @@ RetryCreateDevice:
             Set d3d11FrameBuffer = Nothing
             m_windowDidResize = False
         End If
-        
+
         Dim backgroundColor() As Single
         pvArraySingle backgroundColor, 0.1!, 0.2!, 0.6!, 1!
         m_d3d11DeviceContext.ClearRenderTargetView m_d3d11FrameBufferView, backgroundColor(0)
-        
+
         Dim winRect As D3D11_RECT
         Call GetClientRect(hWnd, winRect)
         Dim viewport As D3D11_VIEWPORT
@@ -288,32 +381,43 @@ RetryCreateDevice:
             .MaxDepth = 1
         End With
         m_d3d11DeviceContext.RSSetViewports 1, viewport
-        
+
         m_d3d11DeviceContext.OMSetRenderTargets 1, m_d3d11FrameBufferView, Nothing
-        
+
         m_d3d11DeviceContext.IASetPrimitiveTopology D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
         m_d3d11DeviceContext.IASetInputLayout m_inputLayout
-        
+
         m_d3d11DeviceContext.VSSetShader m_vertexShader, Nothing, 0
         m_d3d11DeviceContext.PSSetShader m_pixelShader, Nothing, 0
-        
-        
+
+
         m_d3d11DeviceContext.PSSetShaderResources 0, 1, m_textureView
+        m_d3d11DeviceContext.PSSetShaderResources 1, 1, m_textureView2
+        
         m_d3d11DeviceContext.PSSetSamplers 0, 1, m_samplerState
-                     
-             
+
+
         m_d3d11DeviceContext.IASetVertexBuffers 0, 1, m_vertexBuffer, m_stride, m_offset
 
         m_d3d11DeviceContext.Draw m_numVerts, 0
-        
+
         m_d3d11SwapChain.Present 1, 0
-        
+
+
+
         '------------------------
- '      m_d3d11DeviceContext.OMGetRenderTargets 1, SRF, Nothing
-                
-        
+        '      m_d3d11DeviceContext.OMGetRenderTargets 1, SRF, Nothing
+
+
         '--------------------------
-        
+testTextureBytes2(0) = Timer Mod 256
+testTextureBytes2(1) = Timer Mod 256
+testTextureBytes2(2) = Timer Mod 256
+testTextureBytes2(3) = Timer Mod 256
+  Set texture2 = m_d3d11Device.CreateTexture2D(textureDesc, textureSubresourceData2)
+    Set m_textureView2 = m_d3d11Device.CreateShaderResourceView(texture2, ByVal 0)
+
+
         DoEvents
     Loop
 QH:
@@ -401,3 +505,7 @@ End Sub
 Private Sub Form_Resize()
     m_windowDidResize = True
 End Sub
+
+Private Function IDX(X As Long, Y As Long) As Long
+IDX = X * texNumChannels + Y * texBytesPerRow
+End Function

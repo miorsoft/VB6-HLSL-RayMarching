@@ -1,0 +1,21 @@
+12-27-2020 18:18:52 | --------------------------------------------
+12-27-2020 18:18:52 | Truevision3D Debug/Log File
+12-27-2020 18:18:52 | --------------------------------------------
+12-27-2020 18:18:52 | Engine Version : 6.5
+12-27-2020 18:18:52 | ENGINE INFO : DLL Compilation time Nov 18 2008 18:57:04
+12-27-2020 18:18:52 | DEVICE INIT : Initialize Depth
+12-27-2020 18:18:52 | DEVICE INIT : Initializing the device in windowed mode, with a render surface size of 845x480, format 22, depthbuffer 75
+12-27-2020 18:18:52 | VIEWPORT MANAGER : Main viewport initialization
+12-27-2020 18:18:52 | VIEWPORT MANAGER : Main viewport initialized (845x480)
+12-27-2020 18:18:52 | DEVICE INIT : Initialization successful !
+12-27-2020 18:18:52 | DEVICE INFO :  3D Card : Intel(R) HD Graphics 4000  | Card ID : 358 | Driver ID : 659785
+12-27-2020 18:18:52 | DEVICE INFO : Available texture memory : 1770 MB
+12-27-2020 18:18:52 | DEVICE INFO : Vertex Shaders 3.0 supported in hardware.
+12-27-2020 18:18:52 | Debug info : vs fffe0300  ps ffff0300 
+12-27-2020 18:18:52 | DEVICE INFO : Pixel Shaders 3.0 supported in hardware.
+12-27-2020 18:18:52 | DEVICE INFO : Driver used is a DirectX9-level driver 'igdumdim32.dll'. Excellent
+12-27-2020 18:18:52 | DEVICE INFO : Card Type Geforce6xxx/7xxx/8xxx/ATIRadeonX1xxx  Level card, third generation of programmable card
+12-27-2020 18:18:52 | TEXTURE MANAGER : Successfully created a render surface 512x512 on slot 2
+12-27-2020 18:18:52 | SHADER MANAGER : Shader '' successfully created.
+12-27-2020 18:18:54 | START UNLOAD
+12-27-2020 18:18:54 | RESOURCE MANAGER : Engine successfully unloaded

@@ -125,55 +125,64 @@ struct VS_Output {
     float4 pos : SV_POSITION;
     float2 uv : TEXCOORD;
 //	float2 time : _Time;
-//	float2 RES : RESOLUTION;
+	float2 RES : RESOLUTION;
 };
 
 Texture2D    mytexture : register(t0);
+//Texture2D    mytexture2 : register(t1);
+
 SamplerState mysampler : register(s0);
+
+ float Time :  register(t1) ;
 
 VS_Output vs_main(VS_Input input)
 {
     VS_Output output;
     output.pos = float4(input.pos, 0.0f, 1.0f);
-	
     output.uv = input.uv;
     return output;
 }
 
 float4 ps_main(VS_Output input) : SV_Target
 {
- //    return mytexture.Sample(mysampler, input.uv);   
+
+////    float4  col4=  mytexture.Sample(mysampler, input.uv);   
+//// float w=mytexture.width;
+    float4  col4=  mytexture.Sample(mysampler, frac(input.uv*4.0)  );   	
+	return float4(1.0-col4.x,col4.y+cos(Time*10.0),col4.z,col4.w);
+
+
+
+	 
 	
-	  float4 col4;
-//    col4.x=input.uv.x;
-//    col4.y=input.uv.y;
-//    col4.z=0 ;
 	
-    float2	UV = input.uv;
-//	UV.x = UV.x * input.pos.y / input.pos.x;
+//	  float4 col4;
+////    col4.x=input.uv.x;
+////    col4.y=input.uv.y;
+////    col4.z=0 ;
+	
+//    float2	UV = input.uv;
+////	UV.x = UV.x * input.pos.y / input.pos.x;
 	
 			
-	///////////////// Minimal Camera
-	float3 ro = float3(0.0, 1.2, 0.0);
-	float3 rd = normalize(float3 ( UV.x, UV.y, 1.0) );
+//	///////////////// Minimal Camera
+//	float3 ro = float3(0.0, 1.2, 0.0);
+//	float3 rd = normalize(float3 ( UV.x, UV.y, 1.0) );
 	
 	
-	float d = RayMarch(ro , rd ) ;
+//	float d = RayMarch(ro , rd ) ;
 	
-    //float3 col3 = d * .05 ;    // View Distance
+//   //float3 col3 = d * .05 ;    // View Distance
 	
-	float3 p = ro + rd * d ;
+//	float3 p = ro + rd * d ;
 
-    // float3 col3=CalcSceneNormal(p);  // TEST NORMAL
+//    // float3 col3=CalcSceneNormal(p);  // TEST NORMAL
 
-//  float3 col3 = lighting (p, input.time);
-    float3 col3 = lighting (p);
-			
-	col4 = float4(col3,1.0);	
-	
-	ttt += 1000;
-	
-    return col4;
+////  float3 col3 = lighting (p, input.time);
+//    float3 col3 = lighting (p);		
+//	col4 = float4(col3,1.0);	
+//	ttt += 1000;
+//    return col4;
 }
 
 
