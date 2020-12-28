@@ -40,8 +40,15 @@ Public Sub INITTV3D()
     Set Shader = Scene.CreateShader
 
     If Not Shader.CreateFromEffectFile(App.Path & "\Shaders.hlsl") Then MsgBox Shader.GetLastError
-    
+
     Shader.SetTechnique "PostProcess"
+
+    '        Open App.Path & "\Disassembled.HTML" For Output As 1
+    '        Print #1, Shader.GetDisassembledEffect(True)
+    '        Close 1
+    Open App.Path & "\Disassembled.TXT" For Output As 1
+    Print #1, Shader.GetDisassembledEffect(False)
+    Close 1
 
     fMain.Show
 
@@ -59,7 +66,7 @@ End Sub
 Public Sub MAINLOOP()
 
 
-    'http://www.truevision3d.com/forums/shader_development/render_a_shader_to_a_texture-t16924.0.html
+'http://www.truevision3d.com/forums/shader_development/render_a_shader_to_a_texture-t16924.0.html
     Do
 
         TV.Clear True
@@ -71,8 +78,9 @@ Public Sub MAINLOOP()
         ' Outside TV cycle
         surface.StartRender True
         surface.EndRender
-        
+
         Shader.SetEffectParamFloat "TIME1", CSng(2 * Timer * 0.6)
+        
 
         DoEvents
     Loop While True
