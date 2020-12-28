@@ -3,13 +3,13 @@
 // - Roberto Mior
 // - reexre
 
-#define MAX_STEPS 400
+#define MAX_STEPS 200
 #define MAX_DIST 1000.0
 #define EPS 0.01
 
 uniform float TIME1 = 0.0; // Variabliles passed from VB6
-uniform float TIME2 = 0.0;
-uniform float TIME3 = 0.0;
+//uniform float TIME2 = 0.0;
+//uniform float TIME3 = 0.0;
 
 /////////////////////////////////////
 //// RAYMARCHING
@@ -82,11 +82,9 @@ float3  CalcSceneNormal(float3 p) {
 
 float3 lighting(float3 p) {
 
-float AAA = TIME1 + TIME2 *10.0 + TIME3*300.0;
-
 //	float3 LightPos = float3(0.-3 ,1+3. *cos(AAA) ,5.-3. ); 
 	
-	float3 LightPos = float3(-3+cos(AAA)*2 ,4 ,4+sin(AAA)*2 ); 
+	float3 LightPos = float3(-3+cos(TIME1)*2 ,4 ,4+sin(TIME1)*2 ); 
 	
 	float3 L = normalize(LightPos-p);
 	float3 n =  CalcSceneNormal(p);
@@ -163,7 +161,9 @@ technique PostProcess
 { 
    pass Pass_0 
    { 
-      VertexShader = compile vs_1_1 vs_main(); 
+      //VertexShader = compile vs_1_1 vs_main(); 
+	  VertexShader = compile vs_3_0 vs_main(); 
+	  
       //PixelShader = compile ps_2_0 ps_main(); 
 	  PixelShader = compile ps_3_0 ps_main(); // Allows more operations 'https://www.gamedev.net/forums/topic/490094-too-many-arithmetic-instruction/
 	  

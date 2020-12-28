@@ -48,6 +48,7 @@ Public Sub INITTV3D()
 End Sub
 Public Sub EXITTV3D()
     Set surface = Nothing
+    Shader.Destroy
     Set Shader = Nothing
     Set Scene = Nothing
     Set TV = Nothing
@@ -57,7 +58,6 @@ End Sub
 '
 Public Sub MAINLOOP()
 
-    Dim T0!, T1!, T2!, T3!
 
     'http://www.truevision3d.com/forums/shader_development/render_a_shader_to_a_texture-t16924.0.html
     Do
@@ -71,18 +71,8 @@ Public Sub MAINLOOP()
         ' Outside TV cycle
         surface.StartRender True
         surface.EndRender
-
-
-
-        T0 = Timer
-        T1 = T0 - Int(T0)
-        T2 = Int(T0) / 10
-        T3 = Int(T1) / 10
-
-        Shader.SetEffectParamFloat "TIME1", T1
-        Shader.SetEffectParamFloat "TIME2", T2
-        Shader.SetEffectParamFloat "TIME3", T3
-
+        
+        Shader.SetEffectParamFloat "TIME1", CSng(2 * Timer * 0.6)
 
         DoEvents
     Loop While True
