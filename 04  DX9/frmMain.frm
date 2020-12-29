@@ -39,6 +39,8 @@ Private Sub Form_Load()
 
     ShaderClass.CompileFromFile App.Path & "\vs.txt", 0
     ShaderClass.CompileFromFile App.Path & "\ps.txt", -1
+    
+    
     'ShaderClass.LoadFromBinVS App.Path & "\vs.bin"
     'ShaderClass.LoadFromBinPS App.Path & "\ps.bin"
 

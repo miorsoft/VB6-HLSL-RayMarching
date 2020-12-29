@@ -172,7 +172,7 @@ Public Sub CompileFromFile(FN As String, IsPixelS As Long, Optional SaveBin As B
         If SaveBin Then pvSaveShaderToFile cVSCode, pvRemoveExtension(FN) & ".BIN"
     Else
         ' // Compile pixel shader code
-        hr = D3DXCompileShaderFromFile(StrPtr(App.Path & "\ps.txt"), ByVal 0&, Nothing, "ps_main", _
+        hr = D3DXCompileShaderFromFile(StrPtr(FN), ByVal 0&, Nothing, "ps_main", _
                                        StrPtr(StrConv("ps_3_0", vbFromUnicode)), 0, cPSCode, cErrMsg, cPSConstTbl)
         If hr < 0 Then
             pvShowCompError cErrMsg

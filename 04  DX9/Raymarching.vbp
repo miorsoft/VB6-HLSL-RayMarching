@@ -1,7 +1,7 @@
 Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\System32\stdole2.tlb#OLE Automation
-Reference=*\G{93E767C8-1E6B-46CC-B452-3531146574ED}#1.1#0#..\..\..\DX9VB\dx9vb.tlb#DirectX 9 for Visual Basic 6.0 type library by The trick v1.10
-Reference=*\G{29ED3EE8-D79A-422C-95B9-85C71335D443}#1.0#0#..\..\..\..\GITHUB\VB6-HLSL-RayMarching\04  DX9\d3dxvb.tlb#D3DX for Visual Basic 6.0 type library by The trick v1.0
+Reference=*\G{93E767C8-1E6B-46CC-B452-3531146574ED}#1.1#0#..\..\..\VB6\DX9VB\dx9vb.tlb#DirectX 9 for Visual Basic 6.0 type library by The trick v1.10
+Reference=*\G{29ED3EE8-D79A-422C-95B9-85C71335D443}#1.0#0#d3dxvb.tlb#D3DX for Visual Basic 6.0 type library by The trick v1.0
 Form=frmMain.frm
 Class=cDXShader; cDXShader.cls
 IconForm="frmMain"
