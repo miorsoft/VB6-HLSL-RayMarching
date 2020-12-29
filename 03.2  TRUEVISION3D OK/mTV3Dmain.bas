@@ -26,7 +26,7 @@ Public Sub INITTV3D()
     'TV.SetDebugFile App.Path & "\Debug.log"
 
     TV.DisplayFPS True
-    TV.SetDebugFile App.Path & "\logtv3d.txt"
+    TV.SetDebugFile App.Path & "\logtv3d.log"
     TV.SetDebugMode (True)
     TV.Init3DWindowed fMain.hWnd
 
@@ -115,6 +115,10 @@ Dim t As Single
     Loop While True
 
 End Sub
+
+'Shader.SetEffectParamVector3
+'
+'Shader.SetEffectParamVectorArray3
 '
 '
 '
