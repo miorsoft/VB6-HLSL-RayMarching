@@ -24,5 +24,6 @@ $RECYCLE.BIN/
 /*.bak
 
 *.exe
+*.log
 
 /Frames
