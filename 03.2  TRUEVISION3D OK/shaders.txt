@@ -1,0 +1,292 @@
+#define MAXSTEPS 150
+#define MAX_DIST 1000.0
+#define EPS 0.005
+
+uniform float TIME1 = 0.0; // Variabliles passed from VB6
+uniform float3 CAMPOS = float3(25,5,4);      // FLOAT3 <<<<<<<
+uniform float3 CAMLOOKAT = float3(10,0,10);
+uniform float3 SunLight = float3(1,1,1);
+uniform float3 BALLPOS = float3(23,10,1);
+
+
+
+
+/////////////////////////////////////
+//// RAYMARCHING
+/////////////////////////////////////
+
+///////////////////////////////////////// SDF FUNCTIONS
+float sdSphere( float3 p, float s )
+{
+  return length(p)-s;
+}
+float sdBox( float3 p, float3 b )
+{
+    return  length(max((abs(p)- b), 0)) ;
+}
+float sdTorus( float3 p, float2 t )
+{
+  float2 q = float2(length(float2(p.x,p.z))-t.x,p.y);
+  return length(q)-t.y;
+}
+
+float sdCappedCylinder( float3 p, float r, float h )
+{
+  float2 d = abs(float2(length(p.xz),p.y)) - float2(h,r);
+  return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+}
+/////////////////////////////////////////
+float2 min2(float2 a,float2 b)
+{
+	return  (a.x < b.x) ? a:b;
+//	{ return a; }	else
+//   { return b;	}
+}
+float2 minCubic2(float2 a, float2 b , float K )
+{
+	float2 r;
+    float h = max(K - abs(a.x - b.x), 0.0) / K ;
+    r.x = min(a.x, b.x) - h * h * h * K * 0.166666666666667 ; //  '(1# / 6#)
+    if (a.x < b.x)  r.y = a.y; else r.y = b.y ;
+    return r;
+}
+float3 Reflect3_2(float3 V, float3 PlaneNormal)
+{
+ return   V - PlaneNormal * dot(V, PlaneNormal) * 2.0 ;
+}
+
+float3 ColorByMaterial(float id)
+{
+	if( id == 0.0 )
+		return float3(0.4,0.6,0.4); 
+	else if( id == 1.0 )
+		return float3(0.65,0.3,0.1); 
+	else if( id == 2.0 )
+		return float3(0.1,0.3,0.7); 		
+	else if( id == 3.0 )
+		return float3(0.7,0.1,0.0); 		
+		
+	else if( id <0.0 )
+		return float3(0.0,0.3,1.0); 
+	else
+		return float3(1.0,1.0,1.0); 
+	
+}
+
+float opSmoothUnion( float d1, float d2, float k ) {
+    float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
+    return lerp( d2, d1, h ) - k*h*(1.0-h); }
+
+float opSmoothSubtraction( float d1, float d2, float k ) {
+    float h = clamp( 0.5 - 0.5*(d2+d1)/k, 0.0, 1.0 );
+    return lerp( d2, -d1, h ) + k*h*(1.0-h); }
+
+float opSmoothIntersection( float d1, float d2, float k ) {
+    float h = clamp( 0.5 - 0.5*(d2-d1)/k, 0.0, 1.0 );
+    return lerp( d2, d1, h ) + k*h*(1.0-h); }
+
+
+float2 opSmoothSubtraction2( float2 d2, float2 d1, float k ) {
+    float h = clamp( 0.5 - 0.5*(d2.x+d1.x)/k, 0.0, 1.0 );
+    return float2(lerp( d2.x, -d1.x, h ) + k*h*(1.0-h)  ,d1.y ) ; }
+
+
+////////////////////////////////////////// Get DISTANCE of a point 
+
+
+float2 SCENE(float3 p){
+
+	
+	// Strange Shape
+	float2 d1 = float2(sdBox(p-float3(30.0 ,8.5 , 0.0),float3(5.0,7.0,5.0)) -1.5 , 2.0 ) ;
+	float2 d2 = float2(sdSphere(p - float3(23,10.0,0) , 10.0) , 1.0 ) ;
+	float2 d = opSmoothSubtraction2(d2,d1,3);
+
+	// SPHERE
+	d=min2( d,	float2(sdSphere(p -  BALLPOS, 4.0) , 1.0 )) ;		
+	
+	// CUP
+	d1 = float2( sdCappedCylinder(p - float3(0.0,8.0,20.0) , 8.0 ,8.0 ) - 2.0,3.0) ;
+	d2 = float2( sdCappedCylinder(p - float3(0.0,10.0,20.0) , 8.0 ,6.0 ),3.0) ;
+	d=min2( d,	opSmoothSubtraction2(d1,d2,3)  ) ;		
+
+	
+	// FLOOR
+	d=min2(d,float2(p.y,0.0));
+		
+	return d;
+}
+
+///////////////////////////////////////// Marching Ray
+float2 RayMarch (float3 ro, float3 rd )
+{	float t = 0.1; 
+	float2 d0 =float2(0,0) ;
+	
+	for (int i=0; i < MAXSTEPS; i++) {
+		d0 =  SCENE(ro + rd * t) ;
+		t = t + d0.x;
+		if (t > MAX_DIST )  i=MAXSTEPS  ;
+		if (d0.x < EPS)     i=MAXSTEPS  ;
+	}
+	
+	if (t > MAX_DIST)  t= -1.0 ;
+	return float2(t,d0.y) ;
+}
+
+
+//////////////////////////////////////// Compute SCENE Normal
+float3  CalcSceneNormal(float3 p) {
+
+	float3 vn1 =float3( 1., -1., -1.);
+	float3 vn2 =float3(-1., -1.,  1.);
+	float3 vn3 =float3(-1.,  1., -1.);
+	float3 vn4 =float3( 1.,  1.,  1.);
+
+	float3 r1 =  vn1 * SCENE(p + vn1 * EPS).x;
+	float3 r2 =  vn2 * SCENE(p + vn2 * EPS).x;
+	float3 r3 =  vn3 * SCENE(p + vn3 * EPS).x;
+	float3 r4 =  vn4 * SCENE(p + vn4 * EPS).x;
+	
+	return normalize(r1 + r2 + r3 + r4  );
+}
+float  CalcSOFTShadow(float3 Ro ,float3 Rd , float K, float tMIN ) 
+{ 
+	float    tMax = 400 ;//' maxD * 0.5   // '* 1.5    ''<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	float    res = 1.0;
+	float    T = tMIN;
+	float h=0;
+	float tRes =0;
+    while ( T < tMax) { 
+        h = SCENE(Ro + Rd * T).x ;
+        //if h < 0# Then h = 0#: res = 0: Exit Do
+		if (h < 0.0) T=tMax;//break;
+        tRes = K * h / T ;
+        if (tRes < res) res = tRes ;
+        if (h < EPS) T=tMax;//break;
+        T = T + h; 	
+    }
+    return smoothstep(0.0,1.0,res);
+}
+float3 lighting(float3 col , float3 POS , float3 nor , float3 Rd , float Dist ) 
+{
+
+    float amb = 0.01;
+    float bac = 0.01;
+
+    float dif = dot(SunLight, nor) ;
+    
+	if (dif < 0.0)  dif = 0.0 ;
+
+    float3 ref = Reflect3_2(SunLight, nor) ;
+	float spec = clamp(dot(Rd, ref),0.0,1.0) ;  //Specular Shiness
+
+	float SHA = dif ;
+    //if (dif > 0.0)  SHA = SHA * CalcSOFTShadow(POS + (nor * EPS), SunLight, 9.0, 5.0) ;
+	if (dif > 0.0)  SHA = SHA * CalcSOFTShadow(POS + (nor * EPS), SunLight, 12.0, EPS*2.0) ;
+	
+  
+    SHA = 0.05 + SHA * 0.95 ;
+    float3  lin = col * SHA ; 
+    lin = lin + float3(0.5, 0.5, 0.5) * amb ;
+    lin = lin + float3(0.2, 0.2, 0.5) * bac ;
+//    SUN
+    lin = lin + float3(0.9, 0.9, 0.1)* (0.5 * SHA *SHA) ;
+//    SHINE
+    lin = lin + float3(0.5, 0.5, 1.0)* pow(1.0 * spec * SHA,8.0) ;
+
+//  lin= applyFog(lin, Dist, dot(SunLight, Rd)) ;
+	return lin ;
+}
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+struct VS_Input {
+    float2 pos : POSITION;
+    float2 uv : TEXCOORD;
+};
+
+
+struct VS_Output {
+    float4 pos : POSITION;
+    float2 uv : TEXCOORD;
+};
+
+VS_Output vs_main(VS_Input input)
+{
+    VS_Output output;
+    output.pos = float4(input.pos, 0.0f, 1.0f);
+    output.uv = input.uv;
+    return output;
+}
+
+
+
+
+float4 ps_main(VS_Output input) : COLOR0
+{
+	
+   float4 col4=float4(0.0,0.0,0.0,1.0);
+   float2	UV = input.uv;
+	//	    UV = UV*2-1;
+	//		UV.y = -UV.y;
+
+	SunLight = normalize(SunLight) ;
+			
+    // CAMERA
+	float3 ro = CAMPOS;
+	float3 ww = normalize(CAMLOOKAT - CAMPOS);
+	float3 uu = normalize(cross(ww, float3(0,1,0)));
+	float3 vv = normalize(cross(ww, uu));
+    float3 rd = normalize(uu*UV.x + vv*UV.y  +  ww * 1.0 );  //ww MUL =zoom
+		
+	float2 d = RayMarch(ro , rd ) ;
+
+	float3 col  = (d.x>0.0) ? ColorByMaterial(d.y)   : float3(0.0,0.0,0.0) ;
+
+	float3 TouchLocation = ro + rd * d.x ;
+	float3 nor =  CalcSceneNormal(TouchLocation);
+	col = lighting (col , TouchLocation, nor, rd , d.x);
+		
+	col4 = float4(col.x,col.y,col.z,1.0);	
+
+  return col4;
+}
+
+
+
+
+// http://www.truevision3d.com/forums/shader_development/shader_faq-t6277.0.html
+technique PostProcess 
+{ 
+   pass Pass_0 
+   { 
+      //VertexShader = compile vs_1_1 vs_main(); 
+	  VertexShader = compile vs_3_0 vs_main(); 
+	  
+      //PixelShader = compile ps_2_0 ps_main(); 
+	  PixelShader = compile ps_3_0 ps_main(); // Allows more operations 'https://www.gamedev.net/forums/topic/490094-too-many-arithmetic-instruction/
+	  
+   } 
+} 
+
+
+
+/////////////////////////////////////
+//// intrinsic FUNCTIONS
+/////////////////////////////////////
+// https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-intrinsic-functions
+
+
+//////////////////////////////////////////////////////////////////////////////////////
