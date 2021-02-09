@@ -34,7 +34,7 @@ Private bIsActive As Boolean
 Private Sub Form_Click()
 
 
-CamMode = (CamMode + 1) Mod 2
+    CamMode = (CamMode + 1) Mod 2
 
 End Sub
 
@@ -43,8 +43,8 @@ Private Sub Form_Load()
     Set dxSHADER = New cDXShader
 
     dxSHADER.INIT Me.hWnd, Me.ScaleWidth, Me.ScaleHeight, _
-                     App.Path & "\vs.txt", _
-                     App.Path & "\ps.txt", True
+                  App.Path & "\vs.txt", _
+                  App.Path & "\ps.txt", True
 
 
 
@@ -54,14 +54,15 @@ Private Sub Form_Load()
 End Sub
 Private Sub MainLoop()
 
+    CAMPOS.Y = 200
 
     bIsActive = True
     Do While bIsActive
 
 
-           DoCamera
-        
-SetShaderVariables
+        DoCamera
+
+        SetShaderVariables
 
         dxSHADER.RENDER
         DoEvents
@@ -80,10 +81,10 @@ End Sub
 Private Sub tmrFPS_Timer()
     Me.Caption = "FPS: " & dxSHADER.FPS & "  Click to change camera mode"
     dxSHADER.FPS = 0
-    
+
     deltaT = Timer - oTimer: If deltaT > 1 Then deltaT = 1
     oTimer = Timer
-    
-    
+
+
 End Sub
 

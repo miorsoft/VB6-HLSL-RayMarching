@@ -1,14 +1,14 @@
 Attribute VB_Name = "mDX"
 Option Explicit
-Public dxSHADER As cDXShader
+Public dxSHADER   As cDXShader
 
-Public CamMode As Long
-Public oTimer As Double
-Public deltaT As Double
+Public CamMode    As Long
+Public oTimer     As Double
+Public deltaT     As Double
 
-Private CAMPOS As D3DVECTOR
+Public CAMPOS     As D3DVECTOR
 Private CAMLOOKAT As D3DVECTOR
-Private CAMUP As D3DVECTOR
+Private CAMUP     As D3DVECTOR
 
 Private Function Mix3(a As D3DVECTOR, b As D3DVECTOR, V As Double) As D3DVECTOR
     Dim V2#
@@ -20,9 +20,9 @@ Private Function Mix3(a As D3DVECTOR, b As D3DVECTOR, V As Double) As D3DVECTOR
     End With
 End Function
 Private Function D3DVec(X As Double, Y As Double, Z As Double) As D3DVECTOR
-D3DVec.X = X
-D3DVec.Y = Y
-D3DVec.Z = Z
+    D3DVec.X = X
+    D3DVec.Y = Y
+    D3DVec.Z = Z
 
 End Function
 
@@ -33,10 +33,10 @@ End Function
 
 Public Sub DoCamera()
     Dim X#, Y#, Z#
-Dim T#
+    Dim T#
 
 
-T = Timer
+    T = Timer
     Select Case CamMode
 
 
@@ -67,16 +67,16 @@ T = Timer
 End Sub
 
 Public Sub SetShaderVariables()
-Dim V As D3DVECTOR
+    Dim V         As D3DVECTOR
 
 
-'        dxSHADER.SetVariableFloat3 dxSHADER.getRegisterNum("TIME1"), V
+    '        dxSHADER.SetVariableFloat3 dxSHADER.getRegisterNum("TIME1"), V
 
     dxSHADER.SetVariableFloat3 dxSHADER.getRegisterNum("CAMPOS"), CAMPOS
     dxSHADER.SetVariableFloat3 dxSHADER.getRegisterNum("CAMLOOKAT"), CAMLOOKAT
     dxSHADER.SetVariableFloat3 dxSHADER.getRegisterNum("CAMUP"), CAMUP
 
-V.X = Timer
+    V.X = Timer
 
     dxSHADER.SetVariableFloat3 dxSHADER.getRegisterNum("TIME1"), V
 End Sub

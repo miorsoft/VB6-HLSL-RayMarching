@@ -226,13 +226,11 @@ float2 SCENE(float3 V){
 	d.x = V.y - TT     ;
 	d.y=1.0; // Terrain
 	
-	float m = sin(TIME1*0.014)*5.0;
-	
 //	d=min2(d,float2(V.y-5.0,0.0)); //WATER
 	
 //	float Delta =.2/TT;
     //d=min2(d,float2(V.y - 2.0*  noise3(float3(X*0.07+TIME1*0.6,  Y*0.05 +X*0.03 , TIME1*0.25  ))      -5.0,0.0)); 
-	d=minCubic2(d,float2(V.y + m -  2.0*  noise3(float3(X*0.07+TIME1*0.6,  Y*0.05 +X*0.01 , TIME1*0.25  ))      -5.0,0.0 )  , 2.5); 
+	d=minCubic2(d,float2(V.y - 2.0*  noise3(float3(X*0.07+TIME1*0.6,  Y*0.05 +X*0.01 , TIME1*0.25  ))      -5.0,0.0 )  , 2.5); 
 	
 
 	//WATER
